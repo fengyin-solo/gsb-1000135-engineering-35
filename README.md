@@ -24,12 +24,36 @@
 
 ## 启动
 
+### 一键命令（推荐）
+
+```bash
+make install   # 安装/修复前后端依赖（幂等，可重复执行）
+make check     # 环境检查：python3/node、依赖完整性、端口占用、残留进程
+make backend   # 启动后端（自动清理残留进程与过期缓存）
+make frontend  # 启动前端 dev server
+make build     # 前端生产构建（vue-tsc + vite build）
+make stop      # 停止残留的前后端进程
+make clean     # 深度清理：停进程 + 删除 .venv / node_modules / dist / 过期缓存
+```
+
+启动脚本自带自愈能力，覆盖三类常见本地问题：
+
+- **依赖缺失/损坏**：`.venv` 或 `node_modules` 是从其他机器拷贝的残留（解释器路径失效、
+  rollup 原生包平台不匹配）时，自动删除重建；系统缺 `python3-venv` 时自动走
+  `--without-pip` + get-pip 引导。
+- **端口占用**：启动前探测端口，被其他程序占用时给出明确提示，可用
+  `APP_PORT=8001 ./run.sh` 换端口。
+- **重复启动**：通过 pid 文件识别上次残留的进程并先停掉，避免旧进程持有过期的
+  内存示例数据导致查询结果对不上。
+
 ### 后端
 
 ```bash
 cd backend
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-./run.sh
+./run.sh                # 检查环境 + 清理残留 + 启动
+./run.sh --install-only # 只装依赖不启动
+./run.sh --check        # 只做环境检查
+./stop.sh               # 停止残留进程
 ```
 
 健康检查：`curl http://127.0.0.1:8000/api/health`
@@ -38,8 +62,10 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 ```bash
 cd frontend
-npm install
-npm run dev
+./run.sh                # 检查环境 + 清理残留 + 启动 dev server
+./run.sh --install-only # 只装依赖不启动
+./run.sh --check        # 只做环境检查
+./stop.sh               # 停止残留进程
 ```
 
 前端默认监听 `http://127.0.0.1:5173/`，dev server 不会自动打开浏览器，
