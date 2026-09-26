@@ -18,7 +18,8 @@ export default defineConfig({
     port: 5173,
     // 关掉自动打开页面：起服务时只打印地址，不拉起浏览器
     open: false,
-    strictPort: false,
+    // 端口被占用时直接报错，而不是静默换端口——避免打开旧进程对应的页面导致数据对不上
+    strictPort: true,
     proxy: {
       '/api': {
         target: proxyTarget,

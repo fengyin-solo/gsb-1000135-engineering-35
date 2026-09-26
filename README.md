@@ -28,9 +28,17 @@
 
 ```bash
 cd backend
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-./run.sh
+./run.sh          # 自动完成环境自检、过期缓存清理后再启动
 ```
+
+`run.sh` 启动前会自动处理几类常见故障：
+
+- **依赖缺失 / 虚拟环境损坏**：`.venv` 从别的机器拷贝过来（解释器软链失效、
+  Python 版本不一致）时会自动重建；缺 `ensurepip` 的系统会自动引导 pip。
+- **过期示例数据**：每次启动前清理 `app/**/__pycache__`，避免旧字节码里的
+  示例数据与当前代码对不上。
+- **端口占用 / 重复启动**：8000 端口已被本服务占用时直接复用并提示；
+  被其他进程占用时报错并提示先 `make stop`。
 
 健康检查：`curl http://127.0.0.1:8000/api/health`
 
@@ -42,8 +50,25 @@ npm install
 npm run dev
 ```
 
+`npm run dev` / `npm run build` 前会自动执行 `scripts/check-env.mjs` 自检：
+
+- **依赖缺失**：`node_modules` 跨平台拷贝导致原生绑定（如
+  `@rollup/rollup-linux-arm64-gnu`）缺失时，自动重装依赖。
+- **端口占用**：5173 被占用（多为上次失败残留的 dev server）时直接报错，
+  不会静默换端口导致页面数据对不上。
+
 前端默认监听 `http://127.0.0.1:5173/`，dev server 不会自动打开浏览器，
 需要自己访问。`/api` 由 vite 代理到后端 `http://127.0.0.1:8000`。
+
+### 环境自检与清理
+
+```bash
+make check   # 前后端环境自检（不启动服务）
+make stop    # 清理上次失败残留的 uvicorn / vite 进程
+make clean   # 深度清理：停进程 + 删除 .venv、node_modules、dist、__pycache__
+```
+
+上次启动失败、重试结果对不上时，标准恢复流程：`make clean && make install`。
 
 ## 业务模块
 
